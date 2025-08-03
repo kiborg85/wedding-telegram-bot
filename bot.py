@@ -1,8 +1,6 @@
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-
-BOT_TOKEN = "ВАШ_ТОКЕН_ОТ_BOTFATHER"
-CORRECT_NUMBER = "123456"  # номер свидетельства
+from config import BOT_TOKEN, CORRECT_NUMBER  # импорт из отдельного файла
 
 def start(update: Update, context: CallbackContext):
     update.message.reply_text(
