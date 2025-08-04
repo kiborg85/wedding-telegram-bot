@@ -65,6 +65,48 @@ def generate_compliment():
         logger.warning(f"OpenAI error: {e}")
         return random.choice(FALLBACK_COMPLIMENTS)
 
+
+#Функция для генерации ответа на неправильный ввод
+def generate_wrong_answer_response(attempt_count: int = 1) -> str:
+    logger.info("Вызов: generate_wrong_answer_response()")
+    try:
+        hint_part = (
+            "Дай невелику загадкову підказку, яка натякає, що це номер зі свідоцтва про одруження."
+            if attempt_count >= 2 else
+            "Поки без підказки. Просто скажи, що це неправильна відповідь, але лагідно й жартівливо."
+        )
+
+        response = openai.ChatCompletion.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Ти романтичний помічник у квесті. "
+                        "Коли користувач вводить неправильну відповідь, "
+                        "відповідай одним рядком, ніжно, з гумором або емодзі. "
+                        f"{hint_part} Ніколи не показуй точну відповідь."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": "Що сказати на неправильну відповідь?"
+                }
+            ],
+            temperature=0.95,
+            max_tokens=60
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.warning(f"OpenAI error (wrong answer): {e}")
+        return random.choice([
+            "❌ Ні, не так 😅 Але не здавайся!",
+            "🙈 Це ще не те. Спробуй знову!",
+            "🧐 Щось не сходиться... але ти близько!",
+            "🤔 Цікаво... але ні. Подумай ще!"
+        ])
+
+
 # === Нормализация ввода ===
 def normalize_input(text):
     logger.info(f"Вызов: normalize_input('{text}')")
@@ -130,9 +172,8 @@ def check_number(update: Update, context: CallbackContext):
             text="❗ Маленька підказка:\nЦе шестизначне число з нашого свідоцтва про одруження 💍"
         )
 
-    context.bot.send_message(
-        chat_id=chat_id,
-        text="❌ Неправильний номер. Спробуй ще раз 🕵️"
+    wrong_text = generate_wrong_answer_response(attempts[chat_id])
+    context.bot.send_message(chat_id=chat_id, text=wrong_text)
     )
 
 # === Точка входу ===
