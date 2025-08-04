@@ -1,11 +1,14 @@
 import time
 import random
+import openai
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-from config import BOT_TOKEN  # Токен хранится отдельно
+from config import BOT_TOKEN, OPENAI_API_KEY
 
 # Чат-ID пользователей, которые уже прошли этап
 completed_users = set()
+
+openai.api_key = OPENAI_API_KEY
 
 # Список компліментів
 COMPLIMENTS = [
@@ -18,6 +21,28 @@ COMPLIMENTS = [
     "🎀 Я кохаю тебе ще більше, ніж учора.",
     "💖 Ти — найкраще, що зі мною сталося.",
 ]
+
+def generate_compliment():
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Ти ніжний романтичний асистент. Генеруй одне коротке, щире і красиве компліментне речення українською мовою, як для коханої людини."
+                },
+                {
+                    "role": "user",
+                    "content": "Зроби мені комплімент."
+                }
+            ],
+            temperature=0.9,
+            max_tokens=50
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return "💖 Ти неймовірна — навіть ChatGPT розгубився від твоєї краси!"
+
 
 # 🔐 Множество допустимих правильных відповідей
 def normalize_input(text):
@@ -64,10 +89,11 @@ def check_number(update: Update, context: CallbackContext):
     user_input = normalize_input(update.message.text.strip())
 
     # Если уже прошёл — комплімент
-    if chat_id in completed_users:
-        compliment = random.choice(COMPLIMENTS)
-        context.bot.send_message(chat_id=chat_id, text=compliment)
-        return
+if chat_id in completed_users:
+    compliment = generate_compliment()
+    context.bot.send_message(chat_id=chat_id, text=compliment)
+    return
+
 
     # Правильный ответ
     if user_input in VALID_ANSWERS:
