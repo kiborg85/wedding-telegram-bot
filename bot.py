@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from config import BOT_TOKEN, OPENAI_API_KEY
 from config import VALID_ANSWER_RAW_LIST
-VALID_ANSWERS = {normalize_input(x) for x in VALID_ANSWER_RAW_LIST}
+
 
 # === Настройка логирования ===
 logging.basicConfig(
@@ -156,6 +156,7 @@ def normalize_input(text):
     allowed = set("абвгдеєжзийклмнопрстуфхцчшщьюяіїґ0123456789")
     return ''.join(ch for ch in text if ch in allowed)
 
+VALID_ANSWERS = {normalize_input(x) for x in VALID_ANSWER_RAW_LIST}
 
 # === Команда /start ===
 def start(update: Update, context: CallbackContext):
