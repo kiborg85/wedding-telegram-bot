@@ -89,10 +89,10 @@ def check_number(update: Update, context: CallbackContext):
     user_input = normalize_input(update.message.text.strip())
 
     # Если уже прошёл — комплімент
-if chat_id in completed_users:
-    compliment = generate_compliment()
-    context.bot.send_message(chat_id=chat_id, text=compliment)
-    return
+    if chat_id in completed_users:
+        compliment = generate_compliment()
+        context.bot.send_message(chat_id=chat_id, text=compliment)
+        return
 
 
     # Правильный ответ
