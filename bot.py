@@ -174,7 +174,7 @@ def check_number(update: Update, context: CallbackContext):
 
     wrong_text = generate_wrong_answer_response(attempts[chat_id])
     context.bot.send_message(chat_id=chat_id, text=wrong_text)
-    )
+    
 
 # === Точка входу ===
 def main():
