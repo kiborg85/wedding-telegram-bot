@@ -1,3 +1,4 @@
+import logging
 import time
 import random
 import openai
@@ -5,13 +6,27 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from config import BOT_TOKEN, OPENAI_API_KEY
 
-# Чат-ID пользователей, которые уже прошли этап
-completed_users = set()
+# === Настройка логирования ===
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,
+    handlers=[
+        logging.FileHandler("bot.log"),
+        logging.StreamHandler()
+    ]
+)
 
+logger = logging.getLogger(__name__)
+
+# === OpenAI API ===
 openai.api_key = OPENAI_API_KEY
 
-# Список компліментів
-COMPLIMENTS = [
+# === Хранилища состояния ===
+attempts = {}
+completed_users = set()
+
+# === Фиксированные компліменти (на случай ошибки) ===
+FALLBACK_COMPLIMENTS = [
     "🌸 Твоя усмішка — моє натхнення.",
     "✨ Ти робиш цей світ кращим просто своєю присутністю.",
     "💫 Кожна мить з тобою — справжній подарунок.",
@@ -22,7 +37,9 @@ COMPLIMENTS = [
     "💖 Ти — найкраще, що зі мною сталося.",
 ]
 
+# === Генератор компліментів через OpenAI ===
 def generate_compliment():
+    logger.info("Вызов: generate_compliment()")
     try:
         response = openai.ChatCompletion.create(
             model="gpt-4",
@@ -41,11 +58,12 @@ def generate_compliment():
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return "💖 Ти неймовірна — навіть ChatGPT розгубився від твоєї краси!"
+        logger.warning(f"OpenAI error: {e}")
+        return random.choice(FALLBACK_COMPLIMENTS)
 
-
-# 🔐 Множество допустимих правильных відповідей
+# === Нормализация ввода ===
 def normalize_input(text):
+    logger.info(f"Вызов: normalize_input('{text}')")
     text = text.lower()
     lat_to_cyr = {
         'a': 'а', 'b': 'в', 'c': 'с', 'e': 'е', 'h': 'н',
@@ -54,9 +72,9 @@ def normalize_input(text):
     }
     text = ''.join(lat_to_cyr.get(ch, ch) for ch in text)
     allowed = set("абвгдеєжзийклмнопрстуфхцчшщьюяіїґ0123456789")
-    text = ''.join(ch for ch in text if ch in allowed)
-    return text
+    return ''.join(ch for ch in text if ch in allowed)
 
+# === Допустимі відповіді ===
 VALID_ANSWERS = {normalize_input(x) for x in [
     "853",
     "260051",
@@ -64,11 +82,9 @@ VALID_ANSWERS = {normalize_input(x) for x in [
     "1но260051"
 ]}
 
-# 🔁 Счетчик попыток по chat_id
-attempts = {}
-
-# 💬 Приветствие
+# === Команда /start ===
 def start(update: Update, context: CallbackContext):
+    logger.info(f"Вызов: start() от chat_id={update.effective_chat.id}")
     chat_id = update.effective_chat.id
 
     context.bot.send_message(
@@ -80,22 +96,20 @@ def start(update: Update, context: CallbackContext):
 
     context.bot.send_message(
         chat_id=chat_id,
-        text="🧩Введи число, що зберігає силу нашої обіцянки, зафіксованої в той день, коли ми стали однією родиною."
+        text="🧩 Перший етап:\n\nВведи число, що зберігає силу нашої обіцянки, зафіксованої в той день, коли ми стали однією родиною."
     )
 
-# 🔎 Проверка ответа
+# === Обробка повідомлень ===
 def check_number(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     user_input = normalize_input(update.message.text.strip())
+    logger.info(f"Вызов: check_number() від chat_id={chat_id} | Введено: {user_input}")
 
-    # Если уже прошёл — комплімент
     if chat_id in completed_users:
         compliment = generate_compliment()
         context.bot.send_message(chat_id=chat_id, text=compliment)
         return
 
-
-    # Правильный ответ
     if user_input in VALID_ANSWERS:
         completed_users.add(chat_id)
         context.bot.send_message(
@@ -104,7 +118,6 @@ def check_number(update: Update, context: CallbackContext):
         )
         return
 
-    # Счётчик попыток
     attempts[chat_id] = attempts.get(chat_id, 0) + 1
 
     if attempts[chat_id] == 2:
@@ -118,9 +131,9 @@ def check_number(update: Update, context: CallbackContext):
         text="❌ Неправильний номер. Спробуй ще раз 🕵️"
     )
 
-
-# ▶️ Запуск
+# === Точка входу ===
 def main():
+    logger.info("Бот запускается...")
     updater = Updater(BOT_TOKEN, use_context=True)
     dp = updater.dispatcher
 
