@@ -163,6 +163,8 @@ def start(update: Update, context: CallbackContext):
     logger.info(f"Вызов: start() от chat_id={update.effective_chat.id}")
     chat_id = update.effective_chat.id
 
+    completed_users.discard(chat_id)  # сбрасываем прогресс для этого пользователя
+
     greeting = generate_greeting()
     context.bot.send_message(chat_id=chat_id, text=greeting)
 
