@@ -42,7 +42,7 @@ def generate_compliment():
     logger.info("Вызов: generate_compliment()")
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[
                 {
                     "role": "system",
