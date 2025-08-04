@@ -1,7 +1,23 @@
 import time
+import random
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from config import BOT_TOKEN  # Токен хранится отдельно
+
+# Чат-ID пользователей, которые уже прошли этап
+completed_users = set()
+
+# Список компліментів
+COMPLIMENTS = [
+    "🌸 Твоя усмішка — моє натхнення.",
+    "✨ Ти робиш цей світ кращим просто своєю присутністю.",
+    "💫 Кожна мить з тобою — справжній подарунок.",
+    "🌷 Я найщасливіший, що ти — моя.",
+    "🦋 Твої очі яскравіші за всі зірки.",
+    "🌹 Ти — моя любов, моє серце, моє все.",
+    "🎀 Я кохаю тебе ще більше, ніж учора.",
+    "💖 Ти — найкраще, що зі мною сталося.",
+]
 
 # 🔐 Множество допустимих правильных відповідей
 def normalize_input(text):
@@ -47,15 +63,22 @@ def check_number(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     user_input = normalize_input(update.message.text.strip())
 
+    # Если уже прошёл — комплімент
+    if chat_id in completed_users:
+        compliment = random.choice(COMPLIMENTS)
+        context.bot.send_message(chat_id=chat_id, text=compliment)
+        return
+
+    # Правильный ответ
     if user_input in VALID_ANSWERS:
-        attempts.pop(chat_id, None)  # сбросить счётчик
+        completed_users.add(chat_id)
         context.bot.send_message(
             chat_id=chat_id,
             text="✅ Вірно! А ось і твоя наступна підказка:\n\n📍 Зазирни туди, де ми вперше сказали 'я тебе кохаю' ❤️"
         )
         return
 
-    # Увеличиваем попытки
+    # Счётчик попыток
     attempts[chat_id] = attempts.get(chat_id, 0) + 1
 
     if attempts[chat_id] == 2:
@@ -68,6 +91,7 @@ def check_number(update: Update, context: CallbackContext):
         chat_id=chat_id,
         text="❌ Неправильний номер. Спробуй ще раз 🕵️"
     )
+
 
 # ▶️ Запуск
 def main():
