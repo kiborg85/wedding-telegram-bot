@@ -164,6 +164,9 @@ def start(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
 
     completed_users.discard(chat_id)  # сбрасываем прогресс для этого пользователя
+    attempts.pop(chat_id, None)       # сбрасываем счетчик попыток
+    context.user_data.clear()
+    context.chat_data.clear()
 
     greeting = generate_greeting()
     context.bot.send_message(chat_id=chat_id, text=greeting)
