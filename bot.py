@@ -1,6 +1,7 @@
 import logging
 import time
 import random
+from pathlib import Path
 import openai
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
@@ -193,8 +194,12 @@ def check_number(update: Update, context: CallbackContext):
         completed_users.add(chat_id)
         context.bot.send_message(
             chat_id=chat_id,
-            text="✅ Вірно! А ось і твоя наступна підказка:\n\n📍 Зазирни туди, де ми вперше сказали 'я тебе кохаю' ❤️"
+            text="Вірно! А наступне відео підкаже тобі де шукати далі ;-)"
         )
+        time.sleep(5)
+        video_path = Path(__file__).resolve().parent.parent / "output.avi"
+        with open(video_path, "rb") as video:
+            context.bot.send_video(chat_id=chat_id, video=video)
         return
 
     attempts[chat_id] = attempts.get(chat_id, 0) + 1
