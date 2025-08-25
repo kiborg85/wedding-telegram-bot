@@ -3,7 +3,7 @@ import time
 import random
 from pathlib import Path
 import openai
-from telegram import Update
+from telegram import Update, InputFile
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from config import BOT_TOKEN, OPENAI_API_KEY
 from config import VALID_ANSWER_RAW_LIST
@@ -199,7 +199,12 @@ def check_number(update: Update, context: CallbackContext):
         time.sleep(5)
         video_path = Path(__file__).resolve().parent.parent / "output.avi"
         with open(video_path, "rb") as video:
-            context.bot.send_video(chat_id=chat_id, video=video)
+            context.bot.send_video(
+                chat_id=chat_id,
+                video=InputFile(video, filename="output.avi"),
+                supports_streaming=True,
+            )
+
         return
 
     attempts[chat_id] = attempts.get(chat_id, 0) + 1
