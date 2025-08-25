@@ -204,6 +204,7 @@ def check_number(update: Update, context: CallbackContext):
                 video=InputFile(video, filename="output.avi"),
                 supports_streaming=True,
             )
+
         return
 
     attempts[chat_id] = attempts.get(chat_id, 0) + 1
